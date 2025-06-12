@@ -1,0 +1,22 @@
+name: Deploy
+
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        required: true
+        type: string
+      environment:
+        required: false
+        type: string
+        default: "staging"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy ${{ inputs.app-name }}
+        run: |
+          echo "Deploying ${{ inputs.app-name }} to ${{ inputs.environment }}"
+          echo "Deployment URL: https://${{ inputs.app-name }}-${{ inputs.environment }}.example.com"
