@@ -80,7 +80,9 @@ jobs:
             -Dsonar.host.url=${{ inputs.sonar-host-url }} \
             -Dsonar.login=$SONAR_TOKEN \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-            -Dsonar.organization=${{ inputs.sonar-organization }}
+            -Dsonar.organization=${{ inputs.sonar-organization }} \
+            -Dsonar.branch.name=main \
+            -Dsonar.branch.target=main
             
       - name: Build success
         run: echo "${{ inputs.app-name }} built successfully!"
