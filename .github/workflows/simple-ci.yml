@@ -23,8 +23,21 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       
+      - name: Setup coverage
+        run: |
+          if [ -f "package.json" ]; then
+            # Install nyc if not present and no other coverage tool detected
+            if ! npm list jest nyc vitest --depth=0 > /dev/null 2>&1; then
+              npm install --save-dev nyc
+              export TEST_CMD="npx nyc --reporter=lcov ${{ inputs.test-command }}"
+            else
+              export TEST_CMD="${{ inputs.test-command }}"
+            fi
+            echo "FINAL_TEST_COMMAND=$TEST_CMD" >> $GITHUB_ENV
+          fi
+
       - name: Run tests for ${{ inputs.app-name }}
-        run: ${{ inputs.test-command }}
+        run: ${FINAL_TEST_COMMAND:-${{ inputs.test-command }}}
 
       
       - name: Upload Coverage to SonarQube
