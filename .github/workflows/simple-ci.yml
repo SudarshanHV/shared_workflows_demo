@@ -72,7 +72,7 @@ jobs:
           export PATH="$JAVA_HOME/bin:$PATH"
           export JAVA_HOME=$JAVA_HOME
           
-          $(pwd)/sonar-scanner-4.8.0.2856-linux/bin/sonar-scanner \
+          $JAVA_HOME/bin/java -jar $(pwd)/sonar-scanner-4.8.0.2856-linux/lib/sonar-scanner-cli-4.8.0.2856.jar \
             -Dsonar.projectKey=${{ inputs.sonar-project-key }} \
             -Dsonar.host.url=${{ inputs.sonar-host-url }} \
             -Dsonar.login=$SONAR_TOKEN \
