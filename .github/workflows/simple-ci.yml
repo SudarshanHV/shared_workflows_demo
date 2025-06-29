@@ -16,6 +16,10 @@ on:
       sonar-host-url:
         required: true
         type: string
+      enable-coverage:
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   test:
