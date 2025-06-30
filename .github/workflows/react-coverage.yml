@@ -1,0 +1,153 @@
+name: React Coverage Collection
+
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        required: true
+        type: string
+      test-command:
+        required: false
+        type: string
+        default: "npm test -- --coverage --watchAll=false"
+      node-version:
+        required: false
+        type: string
+        default: "18"
+    outputs:
+      coverage-path:
+        description: "Path to the generated lcov file"
+        value: ${{ jobs.test-with-coverage.outputs.coverage-path }}
+        default: "coverage/lcov.info"
+
+jobs:
+  test-with-coverage:
+    runs-on: ubuntu-latest
+    outputs:
+      coverage-path: ${{ steps.coverage-output.outputs.coverage-path }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ inputs.node-version }}
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Setup coverage configuration
+        run: |
+          if [ -f "package.json" ]; then
+            # Check if nyc is already installed
+            if ! npm list nyc --depth=0 > /dev/null 2>&1; then
+              echo "Installing nyc for coverage collection..."
+              npm install --save-dev nyc
+            fi
+            
+            # Create .nycrc.json if it doesn't exist
+            if [ ! -f ".nycrc.json" ]; then
+              echo "Creating nyc configuration..."
+              cat > .nycrc.json << EOF
+          {
+            "all": true,
+            "include": [
+              "src/**/*.js",
+              "src/**/*.jsx",
+              "src/**/*.ts",
+              "src/**/*.tsx"
+            ],
+            "exclude": [
+              "src/**/*.test.js",
+              "src/**/*.test.jsx",
+              "src/**/*.test.ts",
+              "src/**/*.test.tsx",
+              "src/**/*.spec.js",
+              "src/**/*.spec.jsx",
+              "src/**/*.spec.ts",
+              "src/**/*.spec.tsx",
+              "src/setupTests.js",
+              "src/reportWebVitals.js",
+              "src/index.js"
+            ],
+            "reporter": [
+              "lcov",
+              "text",
+              "html"
+            ],
+            "report-dir": "./coverage"
+          }
+          EOF
+            fi
+            
+            # Set up the test command with nyc
+            if [[ "${{ inputs.test-command }}" == *"--coverage"* ]]; then
+              # If the test command already includes coverage, use it as is
+              export FINAL_TEST_CMD="${{ inputs.test-command }}"
+            else
+              # Wrap the test command with nyc
+              export FINAL_TEST_CMD="npx nyc ${{ inputs.test-command }}"
+            fi
+            
+            echo "FINAL_TEST_COMMAND=$FINAL_TEST_CMD" >> $GITHUB_ENV
+            echo "Test command configured: $FINAL_TEST_CMD"
+          else
+            echo "Error: package.json not found!"
+            exit 1
+          fi
+
+      - name: Run tests with coverage for ${{ inputs.app-name }}
+        run: ${{ env.FINAL_TEST_COMMAND }}
+        env:
+          CI: true
+
+      - name: Verify coverage files
+        id: coverage-output
+        run: |
+          # Set default coverage path
+          DEFAULT_COVERAGE_PATH="coverage/lcov.info"
+          echo "coverage-path=$DEFAULT_COVERAGE_PATH" >> $GITHUB_OUTPUT
+          
+          if [ -d "coverage" ]; then
+            echo "Coverage directory contents:"
+            ls -la coverage/
+            
+            # Look for lcov.info file
+            if [ -f "$DEFAULT_COVERAGE_PATH" ]; then
+              echo "LCOV file generated successfully at $DEFAULT_COVERAGE_PATH"
+              
+              # Display coverage summary
+              echo "Coverage Summary:"
+              if [ -f "coverage/lcov-report/index.html" ]; then
+                echo "HTML report available at coverage/lcov-report/index.html"
+              fi
+              
+              # Show first few lines of lcov file for verification
+              echo "LCOV file preview (first 10 lines):"
+              head -10 "$DEFAULT_COVERAGE_PATH"
+            else
+              echo "LCOV file not found at expected location: $DEFAULT_COVERAGE_PATH"
+              exit 1
+            fi
+          else
+            echo "Coverage directory not found!"
+            exit 1
+          fi
+
+      - name: Upload coverage reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ inputs.app-name }}
+          path: |
+            coverage/
+            !coverage/tmp/
+          retention-days: 30
+
+      - name: Coverage collection success
+        run: |
+          echo "Testing and Coverage collection for ${{ inputs.app-name }} completed successfully!"
+          echo "Coverage files have been generated and uploaded as artifacts."
+          echo "LCOV file location: coverage/lcov.info"

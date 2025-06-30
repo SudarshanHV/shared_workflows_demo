@@ -1,0 +1,66 @@
+name: SonarQube Coverage Upload
+
+on:
+  workflow_call:
+    inputs:
+      sonar-project-key:
+        required: true
+        type: string
+      sonar-host-url:
+        required: true
+        type: string
+      sonar-organization:
+        required: true
+        type: string
+      enable-coverage:
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      SONAR_TOKEN:
+        required: true
+
+jobs:
+  upload-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          
+      - name: Verify Java version
+        run: |
+          echo "JAVA_HOME: $JAVA_HOME"
+          java -version
+          which java
+      
+      - name: Upload Coverage to SonarQube
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          echo "Using Java: $JAVA_HOME"
+          $JAVA_HOME/bin/java -version
+          wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
+          unzip sonar-scanner-cli-4.8.0.2856-linux.zip
+          
+          # Override the Java detection in sonar-scanner
+          sed -i "s|#use_embedded_jre=true|use_embedded_jre=false|g" sonar-scanner-4.8.0.2856-linux/conf/sonar-scanner.properties
+          
+          # Force Java 17 by updating PATH and running with explicit JAVA_HOME
+          export PATH="$JAVA_HOME/bin:$PATH"
+          export JAVA_HOME=$JAVA_HOME
+          
+          $JAVA_HOME/bin/java -jar $(pwd)/sonar-scanner-4.8.0.2856-linux/lib/sonar-scanner-cli-4.8.0.2856.jar \
+            -X \
+            -Dsonar.projectKey=${{ inputs.sonar-project-key }} \
+            -Dsonar.host.url=${{ inputs.sonar-host-url }} \
+            -Dsonar.token=$SONAR_TOKEN \
+            -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
+            -Dsonar.organization=${{ inputs.sonar-organization }}
+
+      - name: Coverage Success
+        run: echo "Coverage built successfully!"
