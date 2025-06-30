@@ -18,7 +18,6 @@ on:
       coverage-path:
         description: "Path to the generated lcov file"
         value: ${{ jobs.test-with-coverage.outputs.coverage-path }}
-        default: "coverage/lcov.info"
 
 jobs:
   test-with-coverage:
