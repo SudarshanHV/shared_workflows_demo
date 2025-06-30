@@ -79,7 +79,7 @@ jobs:
             -X \
             -Dsonar.projectKey=${{ inputs.sonar-project-key }} \
             -Dsonar.host.url=${{ inputs.sonar-host-url }} \
-            -Dsonar.login=$SONAR_TOKEN \
+            -Dsonar.token=$SONAR_TOKEN \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
             -Dsonar.organization=${{ inputs.sonar-organization }}
 
