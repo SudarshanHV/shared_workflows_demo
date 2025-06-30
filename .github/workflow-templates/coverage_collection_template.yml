@@ -1,4 +1,4 @@
-name: Simple CI
+name: Coverage Collection Workflow Template
 
 on:
    push:
