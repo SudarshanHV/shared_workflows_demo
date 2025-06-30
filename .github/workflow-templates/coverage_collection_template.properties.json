@@ -1,0 +1,7 @@
+{
+    "name": "Coverage Collection Workflow Template",
+    "description": "Contains SonarQube coverage collection for backend",
+    "categories": [
+        "JS"
+    ]
+}
