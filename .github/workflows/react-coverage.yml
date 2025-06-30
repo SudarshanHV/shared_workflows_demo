@@ -33,11 +33,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ inputs.node-version }}
-          cache: 'npm'
+          cache: ${{ hashFiles('**/package-lock.json', '**/yarn.lock') != '' && 'npm' || '' }}
       
       - name: Install dependencies
-        run: npm ci
-      
+        run: |
+          if [ -f "package-lock.json" ]; then
+            npm ci
+          else
+            npm install
+          fi
+          
       - name: Setup coverage configuration
         run: |
           if [ -f "package.json" ]; then
