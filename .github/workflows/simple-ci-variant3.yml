@@ -1,0 +1,70 @@
+# .github/workflows/frontend-ci-reusable.yml
+
+name: Frontend CI Reusable
+
+on:
+  workflow_call:
+    inputs:
+      app-name:
+        required: true
+        type: string
+      test-command:
+        required: true
+        type: string
+      sonar-project-key:
+        required: true
+        type: string
+      sonar-host-url:
+        required: true
+        type: string
+      sonar-organization:
+        required: true
+        type: string
+      enable-coverage:
+        required: false
+        type: boolean
+        default: true
+      deploy-environment:
+        required: true
+        type: string
+      run-tests:
+        required: false
+        type: boolean
+        default: true
+      run-coverage-upload:
+        required: false
+        type: boolean
+        default: true
+      run-deploy:
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      inherit: true
+
+jobs:
+  test-with-coverage:
+    if: ${{ inputs.run-tests }}
+    uses: SudarshanHV/shared_workflows_demo/.github/workflows/react-coverage.yml@main
+    with:
+      app-name: ${{ inputs.app-name }}
+      test-command: ${{ inputs.test-command }}
+
+  coverage-upload:
+    if: ${{ inputs.run-coverage-upload && (inputs.run-tests || !needs.test-with-coverage.result) }}
+    needs: ${{ inputs.run-tests && 'test-with-coverage' || '' }}
+    uses: SudarshanHV/shared_workflows_demo/.github/workflows/sonarqube.yml@main
+    with:
+      sonar-project-key: ${{ inputs.sonar-project-key }}
+      sonar-host-url: ${{ inputs.sonar-host-url }}
+      sonar-organization: ${{ inputs.sonar-organization }}
+      enable-coverage: ${{ inputs.enable-coverage }}
+    secrets: inherit
+
+  deploy:
+    if: ${{ inputs.run-deploy && github.ref == 'refs/heads/main' && (inputs.run-tests || !needs.test-with-coverage.result) }}
+    needs: ${{ inputs.run-tests && 'test-with-coverage' || '' }}
+    uses: SudarshanHV/shared_workflows_demo/.github/workflows/deploy.yml@main
+    with:
+      app-name: ${{ inputs.app-name }}
+      environment: ${{ inputs.deploy-environment }}
