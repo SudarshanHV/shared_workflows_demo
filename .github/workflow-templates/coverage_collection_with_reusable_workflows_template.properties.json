@@ -1,0 +1,7 @@
+{
+    "name": "Coverage Collection Workflow Template With Reusable Workflows",
+    "description": "Contains SonarQube coverage collection for backend. This template gives the reusable workflows directly rather than giving users a hard-coded template. Meaning they can replace the individual workflow with code of their choice.",
+    "categories": [
+        "JS"
+    ]
+}

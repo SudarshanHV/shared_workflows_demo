@@ -1,0 +1,53 @@
+name: Coverage Collection With Reusable Workflow Template
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# ====== USER: Fill in the following values ======
+env:
+  # Main app/test
+  APP_NAME: "REPLACE_WITH_APP_NAME"                  # e.g. "Hello Frontend"
+  TEST_COMMAND: "REPLACE_WITH_TEST_COMMAND"          # e.g. "npm test"
+  # SonarQube
+  SONAR_PROJECT_KEY: "REPLACE_WITH_SONAR_PROJECT_KEY"
+  SONAR_HOST_URL: "REPLACE_WITH_SONAR_HOST_URL"      # e.g. "https://sonarcloud.io"
+  SONAR_ORGANIZATION: "REPLACE_WITH_SONAR_ORGANIZATION"
+  # Deploy
+  DEPLOY_APP_NAME: "REPLACE_WITH_DEPLOY_APP_NAME"    # e.g. "sw-hello-frontend-demo"
+  DEPLOY_ENVIRONMENT: "REPLACE_WITH_DEPLOY_ENVIRONMENT" # e.g. "staging"
+  # Workflow locations (update if you fork/move the shared workflows)
+  SHARED_WORKFLOWS_REPO: "SudarshanHV/shared_workflows_demo"
+  REACT_COVERAGE_WORKFLOW: ".github/workflows/react-coverage.yml"
+  SONARQUBE_WORKFLOW: ".github/workflows/sonarqube.yml"
+  DEPLOY_WORKFLOW: ".github/workflows/deploy.yml"
+  WORKFLOWS_REF: "main"
+
+jobs:
+  test-with-coverage:
+    uses: ${{ env.SHARED_WORKFLOWS_REPO }}/${{ env.REACT_COVERAGE_WORKFLOW }}@${{ env.WORKFLOWS_REF }}
+    with:
+      app-name: "${{ env.APP_NAME }}"
+      test-command: "${{ env.TEST_COMMAND }}"
+    # secrets: inherit   # Uncomment if your test workflow needs secrets
+
+  coverage-upload:
+    needs: test-with-coverage
+    uses: ${{ env.SHARED_WORKFLOWS_REPO }}/${{ env.SONARQUBE_WORKFLOW }}@${{ env.WORKFLOWS_REF }}
+    with:
+      sonar-project-key: "${{ env.SONAR_PROJECT_KEY }}"
+      sonar-host-url:    "${{ env.SONAR_HOST_URL }}"
+      sonar-organization:"${{ env.SONAR_ORGANIZATION }}"
+      enable-coverage: true
+    secrets: inherit
+
+  deploy:
+    needs: test-with-coverage
+    if: github.ref == 'refs/heads/main'
+    uses: ${{ env.SHARED_WORKFLOWS_REPO }}/${{ env.DEPLOY_WORKFLOW }}@${{ env.WORKFLOWS_REF }}
+    with:
+      app-name:    "${{ env.DEPLOY_APP_NAME }}"
+      environment: "${{ env.DEPLOY_ENVIRONMENT }}"
+    # secrets: inherit   # Uncomment if your deploy workflow needs secrets

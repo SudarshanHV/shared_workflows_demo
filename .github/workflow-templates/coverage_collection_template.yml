@@ -1,34 +1,30 @@
-name: Coverage Collection Workflow Template
+# .github/workflows/coverage_collection_template.yml
+# ================================
+# Coverage Collection Workflow Template
+# --------------------------------
+
+name: Coverage Collection
 
 on:
-   push:
-    branches: main
-   pull_request:
-    branches: main
-   inputs:
-    app-name:
-      required: true
-      type: string
-    test-command:
-      required: false
-      type: string
-      default: "echo 'No tests configured'"
-    sonar-project-key:
-      required: true
-      type: string
-    sonar-host-url:
-      required: true
-      type: string
-    sonar-organization:
-      required: true
-      type: string
-    enable-coverage:
-      required: false
-      type: boolean
-      default: true
-   secrets:
-    SONAR_TOKEN:
-      required: true
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# ====== USER: Fill in the following values ======
+# APP_NAME:            The name of your application (for display/logging)
+# TEST_COMMAND:        The command to run your tests (e.g. "npm test")
+# SONAR_PROJECT_KEY:   Your SonarQube project key
+# SONAR_HOST_URL:      Your SonarQube instance URL (e.g. https://sonarcloud.io)
+# SONAR_ORGANIZATION:  Your SonarQube organization key
+# SONAR_TOKEN:         Save your SonarQube token in GitHub Secrets as SONAR_TOKEN
+
+env:
+  APP_NAME:            "REPLACE_WITH_APP_NAME"
+  TEST_COMMAND:        "REPLACE_WITH_TEST_COMMAND"        # e.g. "npm test"
+  SONAR_PROJECT_KEY:   "REPLACE_WITH_SONAR_PROJECT_KEY"
+  SONAR_HOST_URL:      "REPLACE_WITH_SONAR_HOST_URL"
+  SONAR_ORGANIZATION:  "REPLACE_WITH_SONAR_ORGANIZATION"
 
 jobs:
   test:
@@ -54,17 +50,16 @@ jobs:
             # Install nyc if not present and no other coverage tool detected
             if ! npm list jest nyc vitest --depth=0 > /dev/null 2>&1; then
               npm install --save-dev nyc
-              export TEST_CMD="npx nyc --reporter=lcov ${{ inputs.test-command }}"
+              export TEST_CMD="npx nyc --reporter=lcov ${{ env.TEST_COMMAND }}"
             else
-              export TEST_CMD="${{ inputs.test-command }}"
+              export TEST_CMD="${{ env.TEST_COMMAND }}"
             fi
             echo "FINAL_TEST_COMMAND=$TEST_CMD" >> $GITHUB_ENV
           fi
 
-      - name: Run tests for ${{ inputs.app-name }}
-        run: ${FINAL_TEST_COMMAND:-${{ inputs.test-command }}}
+      - name: Run tests for ${{ env.APP_NAME }}
+        run: ${FINAL_TEST_COMMAND:-${{ env.TEST_COMMAND }}}
 
-      
       - name: Upload Coverage to SonarQube
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -83,11 +78,11 @@ jobs:
           
           $JAVA_HOME/bin/java -jar $(pwd)/sonar-scanner-4.8.0.2856-linux/lib/sonar-scanner-cli-4.8.0.2856.jar \
             -X \
-            -Dsonar.projectKey=${{ inputs.sonar-project-key }} \
-            -Dsonar.host.url=${{ inputs.sonar-host-url }} \
+            -Dsonar.projectKey=${{ env.SONAR_PROJECT_KEY }} \
+            -Dsonar.host.url=${{ env.SONAR_HOST_URL }} \
             -Dsonar.token=$SONAR_TOKEN \
             -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-            -Dsonar.organization=${{ inputs.sonar-organization }}
+            -Dsonar.organization=${{ env.SONAR_ORGANIZATION }}
 
       - name: Build success
-        run: echo "${{ inputs.app-name }} built successfully!"
+        run: echo "${{ env.APP_NAME }} built successfully!"
