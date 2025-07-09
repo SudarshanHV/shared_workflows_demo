@@ -1,5 +1,7 @@
 # shared_workflows_demo
-
+## Usage Examples
+Frontend based repos using the workflow: https://github.com/SudarshanHV/sw_hello_frontend_demo
+Backend based repos using the workflow: https://github.com/SudarshanHV/sw_hello_backend_demo
 ## Key Points
 
 * Reusable workflows with input parameters (inputs and secrets)
